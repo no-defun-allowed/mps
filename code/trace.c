@@ -38,7 +38,8 @@ Bool ScanStateCheck(ScanState ss)
 
   CHECKS(ScanState, ss);
   CHECKL(FUNCHECK(ss->formatScan));
-  /* Can't check ss->formatScanClosure. */
+  CHECKL(FUNCHECK(ss->areaScan));
+  /* Can't check ss->areaScanClosure. */
   CHECKL(FUNCHECK(ss->fix));
   /* Can't check ss->fixClosure. */
   CHECKL(ScanStateZoneShift(ss) == ss->arena->zoneShift);
@@ -58,20 +59,12 @@ Bool ScanStateCheck(ScanState ss)
 }
 
 
-/* traceNoScan -- Area scan method that must not be called. */
+/* traceNoAreaScan -- area scan function that must not be called */
 
-static mps_res_t traceNoScan(mps_ss_t ss, void *base, void *limit, void *closure)
+static mps_res_t traceNoAreaScan(mps_ss_t ss, void *base, void *limit, void *closure)
 {
-  UNUSED(ss);
-
-  AVER(base != NULL);
-  AVER(limit != NULL);
-  AVER(base < limit);
-  AVER(closure == UNUSED_POINTER);
-
-  NOTREACHED;
-
-  return MPS_RES_UNIMPL;
+  UNUSED(closure);
+  return FormatNoScan(ss, base, limit);
 }
 
 
@@ -110,13 +103,13 @@ void ScanStateInit(ScanState ss, TraceSet ts, Arena arena,
   if (ss->fix == SegFix && ArenaEmergency(arena))
         ss->fix = SegFixEmergency;
 
-  ss->formatScan = traceNoScan;
-  ss->formatScanClosure = UNUSED_POINTER;
+  ss->formatScan = FormatNoScan;
+  ss->areaScan = traceNoAreaScan;
   ss->rank = rank;
   ss->traces = ts;
   ScanStateSetZoneShift(ss, arena->zoneShift);
   ScanStateSetUnfixedSummary(ss, RefSetEMPTY);
-  AVER(ss->fixedSummary == RefSetEMPTY);
+  ss->fixedSummary = RefSetEMPTY;
   ss->arena = arena;
   ss->wasMarked = TRUE;
   ScanStateSetWhite(ss, white);
@@ -135,24 +128,6 @@ void ScanStateInit(ScanState ss, TraceSet ts, Arena arena,
 }
 
 
-/* traceFormatScan -- Area scan method that dispatches to a format scan.
- *
- * This is a wrapper for formatted object scanning functions, which
- * should not otherwise be called directly from within the MPS.
- */
-static mps_res_t traceFormatScan(mps_ss_t mps_ss, void *base, void *limit, void *closure)
-{
-  Format format = closure;
-
-  AVER_CRITICAL(base != NULL);
-  AVER_CRITICAL(limit != NULL);
-  AVER_CRITICAL(base < limit);
-  AVERT_CRITICAL(Format, format);
-
-  return format->scan(mps_ss, base, limit);
-}
-
-
 /* ScanStateInitSeg -- Initialize a ScanState object for scanning a segment */
 
 void ScanStateInitSeg(ScanState ss, TraceSet ts, Arena arena,
@@ -163,8 +138,7 @@ void ScanStateInitSeg(ScanState ss, TraceSet ts, Arena arena,
 
   ScanStateInit(ss, ts, arena, rank, white);
   if (PoolFormat(&format, SegPool(seg))) {
-    ss->formatScan = traceFormatScan;
-    ss->formatScanClosure = format;
+    ss->formatScan = format->scan;
   }
 }
 
@@ -1176,6 +1150,8 @@ RefSet ScanStateSummary(ScanState ss)
  */
 void ScanStateUpdateSummary(ScanState ss, Seg seg, Bool wasTotal)
 {
+  RefSet summary;
+
   AVERT(ScanState, ss);
   AVERT(Seg, seg);
   AVERT(Bool, wasTotal);
@@ -1185,7 +1161,7 @@ void ScanStateUpdateSummary(ScanState ss, Seg seg, Bool wasTotal)
     /* If we scanned every reference in the segment then we have a
        complete summary we can set. Otherwise, we just have
        information about more zones that the segment refers to. */
-    if (res == wasTotal)
+    if (wasTotal)
       summary = ScanStateSummary(ss);
     else
       summary = RefSetUnion(SegSummary(seg), ScanStateSummary(ss));
@@ -1207,7 +1183,6 @@ static Res traceScanSegRes(TraceSet ts, Rank rank, Arena arena, Seg seg)
   Bool wasTotal;
   ZoneSet white;
   Res res;
-  RefSet summary;
 
   /* The reason for scanning a segment is that it's grey. */
   AVER(TraceSetInter(ts, SegGrey(seg)) != TraceSetEMPTY);
@@ -1560,7 +1535,7 @@ Res TraceScanFormat(ScanState ss, Addr base, Addr limit)
    * ss->formatScan. */
   ss->scannedSize += AddrOffset(base, limit);
 
-  return ss->formatScan(&ss->ss_s, base, limit, ss->formatScanClosure);
+  return ss->formatScan(&ss->ss_s, base, limit);
 }
 
 
