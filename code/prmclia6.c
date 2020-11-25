@@ -13,7 +13,7 @@
  *
  * ASSUMPTIONS
  *
- * .sp: The stack pointer in the context is RSP.
+ * .sp: The stack pointer in the context is R13 (.sp).
  *
  * .assume.regref: The registers in the context can be modified by
  * storing into an MRef pointer.

@@ -11,11 +11,7 @@
  *
  *
  * SOURCES
- *
- * .source.amd64: AMD64 Architecture Programmer's Manual Volume 3:
- * General-Purpose and System Instructions
- * <https://www.amd.com/system/files/TechDocs/24594.pdf>
- *
+ * None - we do nothing in this implementation.
  *
  * ASSUMPTIONS
  *
