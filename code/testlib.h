@@ -108,6 +108,8 @@
 #define PRIwWORD "16"
 #elif defined(MPS_ARCH_I3)
 #define PRIwWORD "8"
+#elif defined(MPS_ARCH_A6)
+#define PRIwWORD "16"
 #else
 #error "How many beans make five?"
 #endif

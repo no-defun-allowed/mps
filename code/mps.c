@@ -198,6 +198,20 @@
 #include "prmclii6.c"   /* x86-64 for Linux mutator context */
 #include "span.c"       /* generic stack probe */
 
+/* Linux on AArch64 with GCC or Clang */
+#elif defined(MPS_PF_LIA6GC) || defined(MPS_PF_LIA6LL)
+
+#include "lockix.c"     /* Posix locks */
+#include "thix.c"       /* Posix threading */
+#include "pthrdext.c"   /* Posix thread extensions */
+#include "vmix.c"       /* Posix virtual memory */
+#include "protix.c"     /* Posix protection */
+#include "protsgix.c"   /* Posix signal handling */
+#include "prmca6.c"     /* AArch64 mutator context */
+#include "prmcix.c"     /* Posix mutator context */
+#include "prmclia6.c"   /* AArch64 for Linux mutator context */
+#include "span.c"       /* generic stack probe */
+
 /* Windows on IA-32 with Microsoft Visual Studio or Pelles C */
 
 #elif defined(MPS_PF_W3I3MV) || defined(MPS_PF_W3I3PC)

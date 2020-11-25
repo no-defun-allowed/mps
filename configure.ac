@@ -66,6 +66,12 @@ case $host/$CLANG in
       MPS_BUILD_NAME=ll
       PFMCFLAGS="$CFLAGS_LL"
     ;;
+  aarch64-*-linux*/no)
+      AC_MSG_RESULT([Linux AArch64])
+      MPS_OS_NAME=li
+      MPS_ARCH_NAME=a6
+      MPS_BUILD_NAME=gc
+    ;;
   i*86-*-darwin*/*)
       AC_MSG_RESULT([Mac OS X x86])
       MPS_OS_NAME=xc
